@@ -64,6 +64,12 @@ if st.checkbox('显示数据字典'):
         st.write(d_2)
 
 
+def is_none(dic: dict):
+    for k, v in dic.items():
+        if v is not None:
+            return True
+    return False
+
 def run():
     reg_1, reg_2 = dict(), dict()
     reg_1['模块名'] = None if sum(module_check_1) == 0 else obj_1.module_names_[module_check_1].tolist()
@@ -76,13 +82,19 @@ def run():
 
     col_1, col_2 = st.columns(2)
     with col_1:
-        qr_1 = QuaryInfo(obj_1.create_dict())
-        st.header('水平测试')
-        st.table(qr_1.update(reg_1))
+        if not is_none(reg_1):
+            st.warning('No options.')
+        else:
+            qr_1 = QuaryInfo(obj_1.create_dict())
+            st.header('水平测试')
+            st.table(qr_1.update(reg_1))
     with col_2:
-        qr_2 = QuaryInfo(obj_2.create_dict())
-        st.header('经典考试')
-        st.table(qr_2.update(reg_2))
+        if not is_none(reg_2):
+            st.warning('No options.')
+        else:
+            qr_2 = QuaryInfo(obj_2.create_dict())
+            st.header('经典考试')
+            st.table(qr_2.update(reg_2))
 
 
 if click:
