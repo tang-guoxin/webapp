@@ -105,18 +105,18 @@ class SubWeight:
         return weight
 
     def update(self, *args):
-        table_1 = self.get_table(self.sub_weight, *args)
-        table_2 = self.get_table(self.modele_weight, *args)
+        table_1 = self.get_table('科目', self.sub_score_, self.sub_weight, *args)
+        table_2 = self.get_table('模块', self.modele_score_, self.modele_weight, *args)
         return [table_1, table_2]
 
-    def get_table(self, weight, *args):
+    def get_table(self, col, score, weight, *args):
         res = dict()
         for k in weight.keys():
             ls_ = list()
             for dic in args:
                 ls_.append(dic[k]['掌握程度'])
             res[k] = np.sum(weight[k] * np.asarray(ls_))
-        ukey = self.unique_set()
+        ukey = self.unique_set(score)
         ures = dict()
         for uk in ukey:
             for dic in args:
@@ -133,9 +133,9 @@ class SubWeight:
             index=[i+1 for i in range(len(data_ls))]
         )
 
-    def unique_set(self):
+    def unique_set(self, score):
         unis, com = set(), list()
-        for key, value in self.sub_score_.items():
+        for key, value in score.items():
             unis = unis.union(set(value.keys()))
             com.append(set(value.keys()))
         s0 = com[0]
@@ -149,3 +149,45 @@ class SubWeight:
         for s in args:
             res = res.union(s)
         return res
+
+    # 传入 update 的 res
+    def totle_performance(self, dic_ls, *smtables):
+        stable, mtable = smtables[0], smtables[1]
+        sub = stable['科目/模块']
+        mod = mtable['科目/模块']
+        all_sub, all_mod = list(), list()
+        for df in self.args:
+            all_sub += list(df['科目'].unique())
+            all_mod += list(df['模块'].unique())
+        all_mod = list(set(all_mod))
+        all_sub = list(set(all_sub))
+        def chose_uniq(all_obj, ob):
+            ret = list()
+            for s in all_obj:
+                for dic in dic_ls:
+                    for k, v in dic.items():
+                        if k == s and k not in list(ob):
+                            ret.append([s, dic[k]['掌握程度']])
+            return ret
+        res_sub_table = chose_uniq(all_sub, sub)
+        res_mod_table = chose_uniq(all_mod, mod)
+
+        res_sub_table = pd.DataFrame(
+            data=res_sub_table,
+            columns=['科目/模块', '掌握程度']
+        )
+        res_mod_table = pd.DataFrame(
+            data=res_mod_table,
+            columns=['科目/模块', '掌握程度']
+        )
+        res_sub_table = res_sub_table.append(stable)
+        res_sub_table = res_sub_table.reset_index(drop=True)
+
+        res_mod_table = res_mod_table.append(mtable)
+        res_mod_table = res_mod_table.reset_index(drop=True)
+
+        return [res_sub_table, res_mod_table]
+
+
+
+

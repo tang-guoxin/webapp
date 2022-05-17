@@ -56,5 +56,8 @@ print(wt)
 
 print(sw.modele_score_)
 print(sw.modele_weight)
+print(sw.sub_score_)
+print(sw.sub_weight)
 # for r_ in res:
 #     print(r_)
+sw.totle_performance([d_1, d_2], *wt)

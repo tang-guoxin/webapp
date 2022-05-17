@@ -92,6 +92,17 @@ def run():
     col_1, col_2 = st.columns(2)
     qr_1 = QuaryInfo(obj_1.create_dict())
     qr_2 = QuaryInfo(obj_2.create_dict())
+    st.subheader('具有共同科目的总体情况')
+    st.table(tables[0])
+    st.subheader('具有共同模块的总体情况')
+    st.table(tables[1])
+
+    totle_ = sw.totle_performance([obj_1.create_dict(), obj_2.create_dict()], *tables)
+    st.subheader('总体科目')
+    st.table(totle_[0])
+    st.subheader('总体模块')
+    st.table(totle_[1])
+
     with col_1:
         dic_1_ = sub_score_[obj_1.exam_name]
         dic_2_ = modele_score_[obj_1.exam_name]
@@ -100,8 +111,7 @@ def run():
         else:
             st.header('水平测试')
             st.table(qr_1.update(reg_1))
-            st.subheader('具有共同科目的总体情况')
-            st.table(tables[0])
+
             df = pd.DataFrame(
                 {'科目': dic_1_.keys(), '分数': dic_1_.values()}
             )
@@ -122,8 +132,7 @@ def run():
         else:
             st.header('经典考试')
             st.table(qr_2.update(reg_2))
-            st.subheader('具有共同模块的总体情况')
-            st.table(tables[1])
+
             df = pd.DataFrame(
                 {'科目': dic_1_.keys(), '分数': dic_1_.values()}
             )
