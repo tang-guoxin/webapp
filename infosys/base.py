@@ -4,9 +4,12 @@ Created on Sat May 14 09:55:34 2022
 
 @author: tang
 """
+import numpy as np
 import pandas as pd
+from .utils import InitTable
 
 
+# %% 按条件查询
 class QuaryInfo:
     def __init__(self, dic):
         self.dic = dic
@@ -43,6 +46,106 @@ class QuaryInfo:
 
     def list2table(self, ls):
         table = pd.DataFrame(data=ls,
-                             index=[i for i in range(1, len(ls)+1)],
+                             index=[i for i in range(1, len(ls) + 1)],
                              columns=['名称', '掌握程度'])
         return table
+
+
+class SubWeight:
+    def __init__(self, exam_names, *args):
+        self.args = args
+        self.exam_names = exam_names
+        self.sub_score_ = self.get_sub_scores()
+        self.sub_weight = self.get_weight(self.sub_score_)
+        self.modele_score_ = self.get_module_scores()
+        self.modele_weight = self.get_weight(self.modele_score_)
+
+    def get_sub_scores(self):
+        score = dict()
+        for indc, exam_n in zip(self.args, self.exam_names):
+            sub = indc['科目'].unique()
+            d = dict()
+            for s in sub:
+                sco = InitTable.parsing_full_mark(
+                    indc=indc,
+                    reg={'模块': None, '科目': [s, ], '认知层次': None}
+                )
+                d[s] = sco
+            score[exam_n] = d
+        return score
+
+    def get_module_scores(self):
+        score = dict()
+        for indc, exam_n in zip(self.args, self.exam_names):
+            sub = indc['模块'].unique()
+            d = dict()
+            for s in sub:
+                sco = InitTable.parsing_full_mark(
+                    indc=indc,
+                    reg={'模块': [s, ], '科目': None, '认知层次': None}
+                )
+                d[s] = sco
+            score[exam_n] = d
+        return score
+
+    def get_weight(self, score):
+        weight, key_s = dict(), list()
+        for key, value in score.items():
+            key_s.append(set(value.keys()))
+        s0 = key_s[0]
+        for s in key_s:
+            s0 = s0 & s
+        for s in s0:
+            ls_ = list()
+            for key, value in score.items():
+                for k, v in value.items():
+                    if s == k:
+                        ls_.append(v)
+            weight[s] = np.asarray(ls_) / sum(ls_)
+        return weight
+
+    def update(self, *args):
+        table_1 = self.get_table(self.sub_weight, *args)
+        table_2 = self.get_table(self.modele_weight, *args)
+        return [table_1, table_2]
+
+    def get_table(self, weight, *args):
+        res = dict()
+        for k in weight.keys():
+            ls_ = list()
+            for dic in args:
+                ls_.append(dic[k]['掌握程度'])
+            res[k] = np.sum(weight[k] * np.asarray(ls_))
+        ukey = self.unique_set()
+        ures = dict()
+        for uk in ukey:
+            for dic in args:
+                if uk in dic.keys():
+                    ures[uk] = dic[uk]['掌握程度']
+        data_ls = list()
+        for k, v in res.items():
+            data_ls.append([k, v])
+        # for k, v in ures.items():
+        #     data_ls.append([k, v])
+        return pd.DataFrame(
+            data=data_ls,
+            columns=['科目/模块', '掌握程度'],
+            index=[i+1 for i in range(len(data_ls))]
+        )
+
+    def unique_set(self):
+        unis, com = set(), list()
+        for key, value in self.sub_score_.items():
+            unis = unis.union(set(value.keys()))
+            com.append(set(value.keys()))
+        s0 = com[0]
+        for c in com:
+            s0 = s0 & c
+        ukey = unis - s0
+        return ukey
+
+    def intersection_set(self, *args):
+        res = set()
+        for s in args:
+            res = res.union(s)
+        return res
